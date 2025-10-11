@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MediCare Pro - Patient Management</title>
+    <link rel="stylesheet" href="/Frontend/static/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Animated Background -->
+    <div class="animated-bg">
+        <div class="floating-shape shape-1"></div>
+        <div class="floating-shape shape-2"></div>
+        <div class="floating-shape shape-3"></div>
+        <div class="floating-shape shape-4"></div>
+    </div>
+
+    <!-- Loading Animation -->
+    <div class="loading-screen" id="loadingScreen">
+        <div class="loader">
+            <div class="pulse"></div>
+            <div class="pulse"></div>
+            <div class="pulse"></div>
+        </div>
+        <h2>MediCare Pro</h2>
+        <p>Loading Patient Management System</p>
+    </div>
+
+    <!-- Main App Container -->
+    <div class="app-container hidden" id="appContainer">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-heartbeat"></i>
+                    <span>MediCare Pro</span>
+                </div>
+                <div class="header-actions">
+                    <div class="connection-status" id="connectionStatus">
+                        <i class="fas fa-circle"></i>
+                        <span id="statusText">Connecting to API...</span>
+                    </div>
+                    <button class="btn btn-primary" id="addPatientBtn">
+                        <i class="fas fa-plus"></i>
+                        Add New Patient
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Welcome Section with Animation -->
+            <section class="welcome-section" id="welcomeSection">
+                <div class="welcome-content">
+                    <h1 class="welcome-title">Patient Management System</h1>
+                    <p class="welcome-subtitle">Manage patient records with ease and efficiency</p>
+                    <div class="welcome-stats">
+                        <div class="stat-card fade-in">
+                            <i class="fas fa-user-injured"></i>
+                            <div class="stat-info">
+                                <h3 id="totalPatients">0</h3>
+                                <p>Total Patients</p>
+                            </div>
+                        </div>
+                        <div class="stat-card fade-in">
+                            <i class="fas fa-stethoscope"></i>
+                            <div class="stat-info">
+                                <h3 id="activePatients">0</h3>
+                                <p>Under Treatment</p>
+                            </div>
+                        </div>
+                        <div class="stat-card fade-in">
+                            <i class="fas fa-check-circle"></i>
+                            <div class="stat-info">
+                                <h3 id="recoveredPatients">0</h3>
+                                <p>Recovered</p>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="btn btn-large btn-primary" id="getStartedBtn">
+                        Get Started
+                        <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
+            </section>
+
+            <!-- Patient Management Section -->
+            <section class="patient-section hidden" id="patientSection">
+                <div class="section-header">
+                    <h2>Patient Records</h2>
+                    <div class="search-container">
+                        <div class="search-box">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="searchInput" placeholder="Search patients...">
+                        </div>
+                        <button class="btn btn-secondary" id="filterBtn">
+                            <i class="fas fa-filter"></i>
+                            Filter
+                        </button>
+                    </div>
+                </div>
+
+                <div class="patients-grid" id="patientsGrid">
+                    <!-- Patient cards will be dynamically inserted here -->
+                </div>
+            </section>
+        </main>
+
+        <!-- Notifications -->
+        <div class="notification-container" id="notificationContainer"></div>
+    </div>
+
+    <!-- Full Screen Patient Form Modal -->
+    <div class="modal-overlay hidden" id="formModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="formTitle">Add New Patient</h2>
+                <button class="close-btn" id="closeFormBtn">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="patientForm" class="patient-form">
+                <input type="hidden" id="patientId">
+                
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="name">Full Name</label>
+                        <input type="text" id="name" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="age">Age</label>
+                        <input type="number" id="age" min="0" max="120" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="gender">Gender</label>
+                        <select id="gender" required>
+                            <option value="">Select Gender</option>
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="contact">Contact</label>
+                        <input type="text" id="contact" placeholder="e.g., 0321-5678901" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="address">Address</label>
+                        <input type="text" id="address" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="disease">Disease/Condition</label>
+                        <input type="text" id="disease" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="admissionDate">Admission Date</label>
+                        <input type="date" id="admissionDate" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="doctorAssigned">Doctor Assigned</label>
+                        <input type="text" id="doctorAssigned" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="weight">Weight (kg)</label>
+                        <input type="number" id="weight" min="0" step="0.1" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="height">Height (cm)</label>
+                        <input type="number" id="height" min="0" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="bloodGroup">Blood Group</label>
+                        <select id="bloodGroup" required>
+                            <option value="">Select Blood Group</option>
+                            <option value="A+">A+</option>
+                            <option value="A-">A-</option>
+                            <option value="B+">B+</option>
+                            <option value="B-">B-</option>
+                            <option value="AB+">AB+</option>
+                            <option value="AB-">AB-</option>
+                            <option value="O+">O+</option>
+                            <option value="O-">O-</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="bloodPressure">Blood Pressure</label>
+                        <input type="text" id="bloodPressure" placeholder="e.g., 120/80 mmHg" required>
+                    </div>
+                    
+                    <div class="form-group full-width">
+                        <label for="medicalHistory">Medical History (comma separated)</label>
+                        <textarea id="medicalHistory" rows="3" placeholder="e.g., High blood sugar, Obesity"></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="status">Status</label>
+                        <select id="status" required>
+                            <option value="">Select Status</option>
+                            <option value="Under Treatment">Under Treatment</option>
+                            <option value="Recovered">Recovered</option>
+                            <option value="Critical">Critical</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary" id="submitBtn">Add Patient</button>
+                    <button type="button" class="btn btn-secondary" id="cancelBtn">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Patient Details Modal -->
+    <div class="modal-overlay hidden" id="detailsModal">
+        <div class="modal-content patient-details">
+            <div class="modal-header">
+                <h2 id="patientDetailsTitle">Patient Details</h2>
+                <button class="close-btn" id="closeDetailsBtn">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="details-content" id="detailsContent">
+                <!-- Patient details will be inserted here -->
+            </div>
+        </div>
+    </div>
+
+    <script src="/Frontend/static/script.js"></script>
+</body>
+</html>
