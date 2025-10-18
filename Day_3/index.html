@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patient Data Management</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Simple transition for interactive elements */
+        .btn {
+            @apply px-5 py-2.5 font-medium bg-blue-50 text-blue-700 rounded-lg text-sm transition-all duration-300 ease-in-out hover:bg-blue-100 focus:ring-4 focus:outline-none focus:ring-blue-300;
+        }
+        .input-field {
+            @apply bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5;
+        }
+        .select-field {
+            @apply bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5;
+        }
+        .card {
+            @apply bg-white p-6 rounded-xl shadow-lg border border-gray-200;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <div class="container mx-auto p-4 md:p-8 max-w-7xl">
+        <header class="text-center mb-10">
+            <h1 class="text-4xl font-bold text-blue-700">Patient Data Management</h1>
+            <p class="text-gray-500 mt-2">A simple interface to view and manage patient records via FastAPI.</p>
+        </header>
+
+        <!-- Controls Section -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <!-- Fetch & Sort Card -->
+            <div class="card md:col-span-2">
+                <h2 class="text-xl font-semibold mb-4 border-b pb-2">Fetch & Sort Data</h2>
+                <div class="flex flex-wrap items-end gap-4">
+                    <!-- Fetch All Button -->
+                    <div>
+                        <button id="fetchAllBtn" class="btn w-full sm:w-auto">View All Patients</button>
+                    </div>
+                    <!-- Sorting Controls -->
+                    <div class="flex-grow">
+                        <label for="sortBy" class="block mb-2 text-sm font-medium text-gray-900">Sort By:</label>
+                        <select id="sortBy" class="select-field">
+                            <option value="id">Patient ID</option>
+                            <option value="name">Name</option>
+                            <option value="age">Age</option>
+                            <option value="gender">Gender</option>
+                            <option value="disease">Disease</option>
+                        </select>
+                    </div>
+                    <div class="flex-grow">
+                        <label for="sortOrder" class="block mb-2 text-sm font-medium text-gray-900">Order:</label>
+                        <select id="sortOrder" class="select-field">
+                            <option value="asc">Ascending</option>
+                            <option value="desc">Descending</option>
+                        </select>
+                    </div>
+                    <div>
+                        <button id="sortBtn" class="btn w-full sm:w-auto">Sort</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Search by ID Card -->
+            <div class="card">
+                <h2 class="text-xl font-semibold mb-4 border-b pb-2">Find by ID</h2>
+                 <div class="flex items-end gap-4">
+                    <div class="flex-grow">
+                        <label for="patientId" class="block mb-2 text-sm font-medium text-gray-900">Patient ID (e.g., A001)</label>
+                        <input type="text" id="patientId" class="input-field" placeholder="A001">
+                    </div>
+                    <button id="findBtn" class="btn">Find</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Message/Status Area -->
+        <div id="messageArea" class="text-center p-4 mb-8 rounded-lg min-h-[50px]"></div>
+
+        <!-- Data Display Area -->
+        <div id="results" class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+             <p class="text-center p-10 text-gray-500">Patient data will be displayed here.</p>
+        </div>
+    </div>
+
+    <script>
+        // --- CONFIGURATION ---
+        const API_BASE_URL = 'http://127.0.0.1:8000'; // Change this if your FastAPI server runs elsewhere
+
+        // --- DOM ELEMENT REFERENCES ---
+        const fetchAllBtn = document.getElementById('fetchAllBtn');
+        const sortBtn = document.getElementById('sortBtn');
+        const findBtn = document.getElementById('findBtn');
+        const sortBySelect = document.getElementById('sortBy');
+        const sortOrderSelect = document.getElementById('sortOrder');
+        const patientIdInput = document.getElementById('patientId');
+        const resultsDiv = document.getElementById('results');
+        const messageArea = document.getElementById('messageArea');
+
+        // --- HELPER FUNCTIONS ---
+
+        /**
+         * Displays a message to the user.
+         * @param {string} text The message to display.
+         * @param {boolean} isError True if the message is an error.
+         */
+        function showMessage(text, isError = false) {
+            messageArea.textContent = text;
+            messageArea.className = `text-center p-4 mb-8 rounded-lg min-h-[50px] font-medium ${isError ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`;
+        }
+
+        /**
+         * Clears the message area.
+         */
+        function clearMessage() {
+            messageArea.textContent = '';
+            messageArea.className = 'text-center p-4 mb-8 rounded-lg min-h-[50px]';
+        }
+
+        /**
+         * Renders patient data into a table.
+         * @param {Array<Object>} patients An array of patient objects.
+         */
+        function displayData(patients) {
+            resultsDiv.innerHTML = ''; // Clear previous results
+
+            if (!patients || patients.length === 0) {
+                resultsDiv.innerHTML = `<p class="text-center p-10 text-gray-500">No patient data found.</p>`;
+                return;
+            }
+
+            const table = document.createElement('table');
+            table.className = 'w-full text-sm text-left text-gray-500';
+
+            const thead = document.createElement('thead');
+            thead.className = 'text-xs text-gray-700 uppercase bg-gray-100';
+            thead.innerHTML = `
+                <tr>
+                    <th scope="col" class="px-6 py-3">Patient ID</th>
+                    <th scope="col" class="px-6 py-3">Name</th>
+                    <th scope="col" class="px-6 py-3">Age</th>
+                    <th scope="col" class="px-6 py-3">Gender</th>
+                    <th scope="col" class="px-6 py-3">Disease</th>
+                </tr>
+            `;
+            table.appendChild(thead);
+
+            const tbody = document.createElement('tbody');
+            patients.forEach(patient => {
+                const row = tbody.insertRow();
+                row.className = 'bg-white border-b hover:bg-gray-50';
+                row.innerHTML = `
+                    <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">${patient.id}</td>
+                    <td class="px-6 py-4">${patient.name}</td>
+                    <td class="px-6 py-4">${patient.age}</td>
+                    <td class="px-6 py-4">${patient.gender}</td>
+                    <td class="px-6 py-4">${patient.disease}</td>
+                `;
+            });
+            table.appendChild(tbody);
+            resultsDiv.appendChild(table);
+        }
+
+        // --- API CALL FUNCTIONS ---
+
+        /**
+         * Handles the fetching and processing of API responses.
+         * @param {string} url The API endpoint URL.
+         * @param {string} loadingMessage The message to show while fetching.
+         */
+        async function fetchData(url, loadingMessage) {
+            clearMessage();
+            resultsDiv.innerHTML = `<p class="text-center p-10 text-gray-500">${loadingMessage}</p>`;
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+
+                if (!response.ok) {
+                    // If API returns an error (e.g., 404, 400), throw it to the catch block
+                    throw new Error(data.detail || 'An unknown error occurred.');
+                }
+                
+                // If data is a single object (from /patient/{id}), wrap it in an array
+                const dataArray = Array.isArray(data) ? data : [data];
+                displayData(dataArray);
+                showMessage(`Successfully retrieved ${dataArray.length} record(s).`);
+
+            } catch (error) {
+                console.error('API Error:', error);
+                showMessage(error.message, true);
+                resultsDiv.innerHTML = `<p class="text-center p-10 text-gray-500">Failed to fetch data.</p>`;
+            }
+        }
+
+        // --- EVENT LISTENERS ---
+
+        // 1. Fetch all patient data
+        fetchAllBtn.addEventListener('click', () => {
+            fetchData(`${API_BASE_URL}/data`, 'Loading all patient data...');
+        });
+
+        // 2. Sort data
+        sortBtn.addEventListener('click', () => {
+            const sortBy = sortBySelect.value;
+            const order = sortOrderSelect.value;
+            fetchData(`${API_BASE_URL}/sort?sort_by=${sortBy}&order=${order}`, `Sorting data by ${sortBy}...`);
+        });
+
+        // 3. Find a specific patient
+        findBtn.addEventListener('click', () => {
+            const patientId = patientIdInput.value.trim();
+            if (!patientId) {
+                showMessage('Please enter a Patient ID.', true);
+                return;
+            }
+            fetchData(`${API_BASE_URL}/patient/${patientId}`, `Searching for patient ${patientId}...`);
+        });
+
+    </script>
+
+</body>
+</html>
